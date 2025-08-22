@@ -1,0 +1,17 @@
+# Rust build
+target/
+
+# Fichiers de sauvegarde d'éditeurs
+**/*.rs.bk
+
+# Config IDE
+.idea/
+.vscode/
+
+# macOS
+.DS_Store
+
+# Bases de données et secrets
+*.sqlite
+*.db
+.env
