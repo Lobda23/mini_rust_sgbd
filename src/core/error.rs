@@ -1,23 +1,19 @@
 //! Error handling module for the SQL engine.
 //!
-//! This module provides the [`SqlError`] type and the [`SqlResult`] alias,
-//! which are used throughout the database engine to ensure consistent
-//! error reporting and propagation.
+//! This module defines the core error types and conventions used throughout
+//! the database engine. It provides:
+//! - [`SqlError`]: represents errors in the SQL engine (currently only core errors).
+//! - [`SqlResult<T>`]: a type alias for `Result<T, SqlError>` to standardize return types.
 //!
-//! # Overview
-//!
-//! - [`SqlError`]: Represents different categories of errors (currently only
-//!   core-related errors, but extensible to parser, executor, or storage).
-//! - [`SqlResult`]: A `Result<T, SqlError>` alias to standardize return types.
-//!
-//! These abstractions allow the engine to evolve while maintaining a
-//! uniform error-handling strategy.
+//! # Design Goals
+//! - Uniform error reporting across modules (core, parser, executor, storage).
+//! - Easy propagation of errors using `?` operator.
+//! - Extensible for future error categories.
 
 /// Represents errors that can occur in the SQL engine.
 ///
-/// This enum currently contains a single variant (`Core`) for errors
-/// originating in the core subsystem. Future extensions can add
-/// parser, executor, or storage-specific error variants.
+/// Currently contains a single variant `Core` for core subsystem errors.
+/// Can be extended in the future with parser, executor, or storage errors.
 ///
 /// # Example
 /// ```
@@ -28,24 +24,21 @@
 /// ```
 #[derive(Debug, PartialEq)]
 pub enum SqlError {
-    /// Represents a core-level error with a descriptive message.
+    /// Core-level error with a descriptive message.
     Core { message: String },
 }
 
 impl SqlError {
-    /// Create a new `SqlError` of type `Core` with a specific message.
+    /// Creates a new core error with a specific message.
     ///
     /// # Arguments
-    ///
-    /// * `message` - A string slice describing the error.
+    /// * `message` - Description of the error.
     ///
     /// # Example
-    ///
     /// ```
     /// use mini_rust_sgbd::core::error::SqlError;
-    ///
-    /// let err = SqlError::new_core("critical failure in the core module");
-    /// assert_eq!(err.message(), "critical failure in the core module");
+    /// let err = SqlError::new_core("critical failure");
+    /// assert_eq!(err.message(), "critical failure");
     /// ```
     pub fn new_core(message: &str) -> Self {
         SqlError::Core {
@@ -53,17 +46,14 @@ impl SqlError {
         }
     }
 
-    /// Return the error message contained in the `SqlError`.
+    /// Returns the error message.
     ///
     /// # Returns
-    ///
-    /// A string slice (`&str`) representing the error message.
+    /// A string slice describing the error.
     ///
     /// # Example
-    ///
     /// ```
     /// use mini_rust_sgbd::core::error::SqlError;
-    ///
     /// let err = SqlError::new_core("test error");
     /// assert_eq!(err.message(), "test error");
     /// ```
@@ -74,12 +64,11 @@ impl SqlError {
     }
 }
 
-/// Type alias for results returned by SQL-related functions.
+/// Type alias for results in the SQL engine.
 ///
-/// Ensures a consistent error type across the database engine.
+/// Standardizes all function return types to `Result<T, SqlError>`.
 ///
 /// # Example
-///
 /// ```
 /// use mini_rust_sgbd::core::error::{SqlError, SqlResult};
 ///
@@ -92,19 +81,16 @@ impl SqlError {
 /// ```
 pub type SqlResult<T> = Result<T, SqlError>;
 
-/// ================== Unit Tests ==================
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    /// Verify that `SqlError::new_core` correctly stores the provided message.
     #[test]
     fn test_new_core_stores_message() {
         let error = SqlError::new_core("core subsystem crashed");
         assert_eq!(error.message(), "core subsystem crashed");
     }
 
-    /// Ensure that two `SqlError::Core` instances with the same message are equal.
     #[test]
     fn test_core_error_equality() {
         let e1 = SqlError::new_core("same message");
@@ -112,7 +98,6 @@ mod tests {
         assert_eq!(e1, e2);
     }
 
-    /// Ensure that `SqlResult<T>` works correctly with `Ok`.
     #[test]
     fn test_sqlresult_ok() {
         let result: SqlResult<i32> = Ok(42);
@@ -120,7 +105,6 @@ mod tests {
         assert_eq!(result.unwrap(), 42);
     }
 
-    /// Ensure that `SqlResult<T>` works correctly with `Err`.
     #[test]
     fn test_sqlresult_err() {
         let result: SqlResult<i32> = Err(SqlError::new_core("failure"));
@@ -128,7 +112,7 @@ mod tests {
         assert_eq!(result.unwrap_err().message(), "failure");
     }
 
-    /// Ensure that `?` operator correctly propagates `SqlError`.
+    /// Helper function to test propagation with `?` operator.
     fn failable_function() -> SqlResult<i32> {
         Err(SqlError::new_core("propagation test"))
     }
@@ -136,7 +120,7 @@ mod tests {
     #[test]
     fn test_error_propagation() {
         fn wrapper() -> SqlResult<i32> {
-            let _x = failable_function()?; // should propagate the error
+            let _x = failable_function()?; // propagate error
             Ok(1)
         }
 
