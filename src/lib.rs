@@ -8,3 +8,9 @@ pub mod core {
     pub mod error;
 }
 
+pub mod frontend {
+    pub mod ast;
+    pub mod lexer;
+    pub mod parser;
+    pub mod token;
+}
